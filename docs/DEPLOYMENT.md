@@ -204,4 +204,8 @@ Single-block `SCAN_BLOCK_HEIGHT` mode requests detailed HSD block JSON and resol
 
 ## Public Repository
 
-The intended public repository is `denuoweb/HNScrawler`. Local changes should be committed in small groups and pushed to `main`.
+The canonical public source repository is
+[`handshake-rs/hns-dane-crawler`](https://github.com/handshake-rs/hns-dane-crawler).
+Denuo remains the production deployer and publisher; repository ownership does
+not change the deployment or release-signing identity. Local changes should be
+committed in small groups and pushed to `main`.

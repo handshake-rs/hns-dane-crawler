@@ -4,6 +4,25 @@ Static topology and DANE-readiness snapshots for the current Handshake namespace
 
 HNScrawler builds a compact SQLite database from HSD-derived root state, classifies current on-chain resource summaries, combines them with imported delegated-DNS evidence, derives compliance stages, and publishes a paginated static report. The topology build does not run website liveness checks. A separate `hns-live-directory` service can consume the published snapshot on the web VM without extending the HSD build or deploy cycle.
 
+## Ecosystem Role and Output Boundaries
+
+This repository is the crawler and reporting package in the `handshake-rs`
+ecosystem. It produces topology snapshots, DANE-readiness queues, static report
+artifacts, stored DNS evidence summaries, and the optional live-directory
+output. Those artifacts describe observed or indexed state; they are not an
+authoritative namespace classifier and do not make browser trust decisions.
+
+Browser clients and the shared DANE engine resolve and validate the hostname
+for each request independently. They do not depend on this crawler being
+available at runtime. This package likewise does not operate a Handshake node or
+wallet, publish authoritative DNS data, provision certificates, or enforce TLS
+policy in a browser.
+
+The canonical source repository is
+[`handshake-rs/hns-dane-crawler`](https://github.com/handshake-rs/hns-dane-crawler).
+The organization migration does not change Denuo's package authorship,
+copyright, production deployment, publishing, or release-signing identity.
+
 The current analysis answers:
 
 - Which active names publish SYNTH or delegated nameserver bootstrap material?

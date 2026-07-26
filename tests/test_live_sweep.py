@@ -24,6 +24,7 @@ from hns_topology.live_sweep import (
     run_sweep_batch,
     select_sweep_candidates,
 )
+from hns_topology.timeutil import utc_now
 
 
 def test_sweep_prioritizes_ds_bootstrap_before_other_root_signals(tmp_path):
@@ -173,6 +174,7 @@ def test_sweep_samples_unknown_authorities_then_skips_shared_unreachable_group(t
             _result(root_name="aa-shared", resource_hash="hash-aa-shared", category="offline"),
             dns_status="unreachable",
             failure_reason="authoritative_dns_unreachable",
+            checked_at=utc_now(),
         )
         for _ in range(3):
             record_authority_health(

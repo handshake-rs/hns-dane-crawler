@@ -5,7 +5,7 @@ GCP_PROJECT="${GCP_PROJECT:-denuo-web-site}"
 GCP_ZONE="${GCP_ZONE:-us-west1-b}"
 INDEXER_VM="${INDEXER_VM:-hns-topology-indexer}"
 INDEXER_REPO_DIR="${INDEXER_REPO_DIR:-/mnt/hnscrawler/HNScrawler}"
-REPO_URL="${REPO_URL:-https://github.com/denuoweb/HNScrawler.git}"
+REPO_URL="${REPO_URL:-https://github.com/handshake-rs/hns-dane-crawler.git}"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 . "$SCRIPT_DIR/gcloud-ssh-lib.sh"
 

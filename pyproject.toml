@@ -15,6 +15,11 @@ dependencies = [
   "dnspython>=2.6",
 ]
 
+[project.urls]
+Homepage = "https://github.com/handshake-rs/hns-dane-crawler"
+Repository = "https://github.com/handshake-rs/hns-dane-crawler.git"
+Issues = "https://github.com/handshake-rs/hns-dane-crawler/issues"
+
 [project.optional-dependencies]
 dev = [
   "pytest>=8",
