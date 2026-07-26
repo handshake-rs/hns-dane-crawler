@@ -1,4 +1,4 @@
-# HNScrawler
+# HNS DANE Crawler
 
 Static topology and DANE-readiness snapshots for the current Handshake namespace.
 
