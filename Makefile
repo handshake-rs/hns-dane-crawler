@@ -2,7 +2,9 @@
 
 install:
 	python3 -m venv .venv
-	. .venv/bin/activate && pip install --upgrade pip && pip install -e '.[dev]'
+	. .venv/bin/activate && python -m pip install --requirement requirements-dev.lock
+	. .venv/bin/activate && python -m pip install --no-build-isolation --no-deps --editable .
+	. .venv/bin/activate && python -m pip check
 
 test:
 	. .venv/bin/activate && pytest

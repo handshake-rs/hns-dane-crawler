@@ -46,7 +46,9 @@ The current analysis answers:
 ```bash
 python3 -m venv .venv
 . .venv/bin/activate
-pip install -e '.[dev]'
+python -m pip install --requirement requirements-dev.lock
+python -m pip install --no-build-isolation --no-deps --editable .
+python -m pip check
 
 hns-topology bootstrap-fixture --fixture tests/fixtures/sample_hsd_names.json --db data/topology.sqlite
 hns-topology generate-site --db data/topology.sqlite --out public
