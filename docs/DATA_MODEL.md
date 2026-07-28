@@ -132,6 +132,7 @@ Default export:
 - `overview-pages/**`
 - `names-pages.json`
 - `names-pages/**`
+- `hns-handoff-groups.json`
 - `ip-addresses/**`
 - `nameservers/**`
 - `dns-evidence/**` when imported DNS evidence exists
@@ -144,3 +145,9 @@ Optional with `--include-downloads`:
 - `topology.sqlite.gz`
 
 `names-pages/all` is the canonical sorted row store. Filter collections are ordinal postings into that row store, which keeps export and browser load cost bounded.
+
+`hns-handoff-groups.json` is the compact `hns-handoff-cohorts-v1` handoff
+index consumed by the independent live directory. It carries bounded
+nameserver-handoff cohorts, DNSSEC priority routes and canaries, and the
+complete DS-backed resolver-preflight set without turning live probing into a
+second topology snapshot.

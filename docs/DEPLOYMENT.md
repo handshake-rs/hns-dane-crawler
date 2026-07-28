@@ -6,7 +6,10 @@ The cheapest sustainable deployment is an ephemeral indexer VM plus the existing
 
 Copy `scripts/env.example` to `.env` on the operator machine or export the variables directly.
 
-See `docs/CLOUD_AUDIT.md` for the current local `gcloud` context and the existing website VM inventory.
+`docs/CLOUD_AUDIT.md` preserves the 2026-07-01 operator snapshot. Do not use
+that dated inventory as current state; run
+`scripts/gcloud-production-preflight.sh` to inspect the active `gcloud`
+context and production resources before a deployment.
 
 Required for HSD indexing:
 

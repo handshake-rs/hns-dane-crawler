@@ -1,4 +1,8 @@
-# Cloud Audit
+# Cloud Audit (2026-07-01 Snapshot)
+
+This is preserved point-in-time operator evidence, not a current inventory.
+Run `scripts/gcloud-production-preflight.sh` before any production action to
+inspect the active account, project, VM, disk, mount, and indexer state.
 
 Corrected local `gcloud` context:
 
@@ -53,7 +57,7 @@ scripts/gcloud-create-indexer.sh
 
 The script creates or starts the compute VM and keeps the indexer disk persistent with `auto-delete=no`.
 
-## Latest Preflight
+## Recorded Preflight
 
 `scripts/gcloud-production-preflight.sh` passed on 2026-07-01 with:
 
@@ -81,7 +85,7 @@ NAME                       SIZE_GB  TYPE         USERS                     STATU
 hns-topology-indexer-disk  200      pd-balanced  ['hns-topology-indexer']  READY
 ```
 
-Current production resources:
+Production resources recorded in that snapshot:
 
 - `denuoweb-vm`
 - `denuoweb-vm` boot disk

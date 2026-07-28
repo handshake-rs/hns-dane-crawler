@@ -2,7 +2,7 @@
 
 Static topology and DANE-readiness snapshots for the current Handshake namespace.
 
-HNScrawler builds a compact SQLite database from HSD-derived root state, classifies current on-chain resource summaries, combines them with imported delegated-DNS evidence, derives compliance stages, and publishes a paginated static report. The topology build does not run website liveness checks. A separate `hns-live-directory` service can consume the published snapshot on the web VM without extending the HSD build or deploy cycle.
+HNS DANE Crawler builds a compact SQLite database from HSD-derived root state, classifies current on-chain resource summaries, combines them with imported delegated-DNS evidence, derives compliance stages, and publishes a paginated static report. The topology build does not run website liveness checks. A separate `hns-live-directory` service can consume the published snapshot on the web VM without extending the HSD build or deploy cycle.
 
 ## Ecosystem Role and Output Boundaries
 
@@ -62,7 +62,7 @@ Open `public/index.html` or serve `public/` with any static web server.
 Bootstrap from HSD RPC:
 
 ```bash
-hns-topology bootstrap-hsd --db data/topology.sqlite --rules configs/provider_rules.json
+hns-topology bootstrap --db data/topology.sqlite --rules configs/provider_rules.json
 ```
 
 Incremental updates:
@@ -111,9 +111,14 @@ Default production artifacts:
 - `generator_handoff.js`
 - `data/summary.json`
 - `data/manifest.json`
+- `data/overview-pages.json`
+- `data/overview-pages/**`
 - `data/names-pages.json`
 - `data/names-pages/**`
+- `data/hns-handoff-groups.json`
 - `data/ip-addresses/**`
+- `data/nameservers/index.json`
+- `data/nameservers/shards/**`
 - `data/dns-evidence/**` when imported DNS evidence exists
 
 Optional downloads with `--include-downloads`:

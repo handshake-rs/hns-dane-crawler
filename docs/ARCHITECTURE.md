@@ -1,6 +1,6 @@
 # Architecture
 
-HNScrawler is a static topology indexer for Handshake names. It indexes HSD-derived root state, classifies compact resource summaries, combines them with imported delegated-DNS observations, derives DANE-readiness queues, and publishes a static site.
+HNS DANE Crawler is a static topology indexer for Handshake names. It indexes HSD-derived root state, classifies compact resource summaries, combines them with imported delegated-DNS observations, derives DANE-readiness queues, and publishes a static site.
 
 The topology pipeline intentionally does not perform website liveness checks, host discovery, device/browser checks, or active HTTPS/DANE verification. The standalone live-directory process runs separately on the web VM and consumes a published topology snapshot read-only.
 
@@ -16,7 +16,7 @@ both summaries            -> compliance stages -> static site -> validation
 
 Bootstrap commands create the canonical SQLite database:
 
-- `bootstrap-hsd`
+- `bootstrap`
 - `bootstrap-jsonl`
 - `bootstrap-fixture`
 
@@ -53,12 +53,15 @@ The canonical workflow state is the derived `compliance_stage`:
 - `bootstrap_ready`: SYNTH or delegated GLUE bootstrap exists; DNSSEC/DS/TLSA planning is next.
 - `non_actionable`: expired, parked/default, resolver infrastructure, empty, or unsupported resources.
 
-Generator handoffs are produced from those stages:
+Generator handoffs are produced from those stages. The public next-action key
+and generator intent are distinct fields:
 
-- `generate_tlsa`
-- `verify_ns_handoff`
-- `missing_glue`
-- `dnssec_dane`
+| Compliance stage | Next-action key | Generator intent |
+| --- | --- | --- |
+| `tlsa_gap` | `generate_tlsa` | `generate_tlsa` |
+| `indirect_ns_handoff` | `verify_ns_handoff` | `missing_glue` |
+| `missing_glue` | `fix_ns_glue` | `missing_glue` |
+| `bootstrap_ready` | `plan_dnssec_dane` | `dnssec_dane` |
 
 ## Export Design
 
@@ -72,6 +75,7 @@ Default public data:
 - nonzero filter postings
 - IP drill-down indexes
 - nameserver drill-down indexes
+- HNS nameserver-handoff cohorts, priority routes, and DS preflight groups
 - DNS evidence sidecars
 
 Optional downloads:
