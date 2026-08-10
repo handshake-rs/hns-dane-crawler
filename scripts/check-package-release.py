@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import ast
+import re
 import sys
 import tomllib
 from pathlib import Path
@@ -14,6 +15,9 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT_FILE = ROOT / "pyproject.toml"
 INIT_FILE = ROOT / "src" / "hns_topology" / "__init__.py"
 CHANGELOG_FILE = ROOT / "CHANGELOG.md"
+MANIFEST_FILE = ROOT / "MANIFEST.in"
+PREFLIGHT_FILE = ROOT / ".github" / "workflows" / "package-release-preflight.yml"
+EXPECTED_VERSION = "0.1.0"
 
 
 def _import_version() -> str:
@@ -49,6 +53,7 @@ def main() -> int:
         errors.append(f"invalid project version: {project_version!r}")
 
     _require(project_version == import_version, "project and import versions differ", errors)
+    _require(project_version == EXPECTED_VERSION, "first candidate version changed", errors)
     _require(
         project.get("name") == "denuo-hns-topology",
         "distribution identity changed",
@@ -87,12 +92,82 @@ def main() -> int:
     )
     _require((ROOT / "LICENSE").is_file(), "LICENSE is missing", errors)
     _require((ROOT / "README.md").is_file(), "README.md is missing", errors)
+    _require(MANIFEST_FILE.is_file(), "MANIFEST.in is missing", errors)
+    _require(
+        (ROOT / "scripts" / "build-package-candidate.py").is_file(),
+        "package candidate builder is missing",
+        errors,
+    )
+    manifest = MANIFEST_FILE.read_text(encoding="utf-8") if MANIFEST_FILE.is_file() else ""
+    for required in (
+        "include CHANGELOG.md",
+        "include LICENSE",
+        "include README.md",
+        "include pyproject.toml",
+        "prune tests",
+    ):
+        _require(required in manifest, f"MANIFEST.in omits {required!r}", errors)
     changelog = CHANGELOG_FILE.read_text(encoding="utf-8")
     _require(
         f"## {project_version} " in changelog,
         "candidate version is missing from CHANGELOG.md",
         errors,
     )
+
+    if PREFLIGHT_FILE.is_file():
+        preflight = PREFLIGHT_FILE.read_text(encoding="utf-8")
+        _require(
+            re.search(r"^on:\n  workflow_dispatch:\s*$", preflight, re.MULTILINE) is not None,
+            "package preflight must be manually dispatchable",
+            errors,
+        )
+        for automatic_event in ("push", "pull_request", "schedule"):
+            _require(
+                re.search(rf"^  {automatic_event}:\s*", preflight, re.MULTILINE) is None,
+                f"package preflight must not run on {automatic_event}",
+                errors,
+            )
+        required_preflight_text = (
+            "expected_commit:",
+            "permissions:\n  contents: read",
+            "persist-credentials: false",
+            "test \"$GITHUB_REF\" = \"refs/heads/main\"",
+            "test \"$GITHUB_SHA\" = \"$EXPECTED_COMMIT\"",
+            "python scripts/build-package-candidate.py",
+            f"name: denuo-hns-topology-{EXPECTED_VERSION}-${{{{ inputs.expected_commit }}}}",
+            "retention-days: 7",
+            "compression-level: 0",
+        )
+        for required in required_preflight_text:
+            _require(required in preflight, f"package preflight omits {required!r}", errors)
+        _require(
+            preflight.count("actions/upload-artifact@") == 1,
+            "package preflight must upload exactly one candidate artifact",
+            errors,
+        )
+        _require(
+            re.findall(r"^\s+retention-days:\s*(\d+)\s*$", preflight, re.MULTILINE)
+            == ["7"],
+            "package preflight must use one seven-day retention setting",
+            errors,
+        )
+        for forbidden in (
+            "contents: write",
+            "id-token: write",
+            "packages: write",
+            "secrets.",
+            "gcloud-",
+            "publish-site",
+            "TOPOLOGY_DB",
+            "public/",
+        ):
+            _require(
+                forbidden not in preflight,
+                f"package preflight crosses the package-only boundary with {forbidden!r}",
+                errors,
+            )
+    else:
+        errors.append("package release preflight workflow is missing")
 
     if errors:
         for error in errors:

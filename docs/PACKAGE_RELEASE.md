@@ -58,14 +58,17 @@ node --check scripts/hsd-export-names-jsonl.js
 
 The package check fails if the project and import-package versions diverge, if
 the version is not represented in the changelog, or if the stable distribution,
-entry-point, license, README, package-data, and repository identities drift.
+entry-point, license, README, package-data, and repository identities drift. It
+also rejects an automatic, credentialed, long-retention, or topology-deployment
+package preflight.
 
-## Wheel Preflight
+## Routine Wheel Evidence
 
 CI builds a wheel from every pushed commit after the source checks, installs it
 into an isolated target, verifies its installed metadata/import version, writes
 a SHA-256 sidecar, and retains both files as an exact-commit artifact. The same
-cheap check can be reproduced locally without writing into the repository:
+cheap smoke check can be reproduced locally without writing into the
+repository:
 
 ```bash
 PACKAGE_TMP="$(mktemp -d)"
@@ -79,7 +82,54 @@ sha256sum "$PACKAGE_TMP"/dist/*.whl
 ```
 
 Remove the temporary directory after inspection. A wheel built from a dirty
-tree, an unpushed commit, or a failed CI run is not a release artifact.
+tree, an unpushed commit, or a failed CI run is not a release artifact. Routine
+CI does not build or inspect the source distribution and is not the package
+release preflight.
+
+Exact source `43b78fb6a28f920415aed6145d232126f5fa57e5` passed the complete
+repository CI job in
+[`31404940342`](https://github.com/handshake-rs/hns-dane-crawler/actions/runs/31404940342)
+and the Actions, JavaScript/TypeScript, and Python CodeQL jobs in
+[`31404938838`](https://github.com/handshake-rs/hns-dane-crawler/actions/runs/31404938838)
+on 2026-08-10. The CI run built and retained a wheel, but it predates the
+source-distribution preflight. These are exact-commit historical results, not
+qualification inherited by later release-tooling or documentation commits.
+
+## Exact-Commit Package Preflight
+
+After routine CI and CodeQL pass for a pushed `main` candidate, manually
+dispatch the credential-free package workflow with that exact commit:
+
+```bash
+gh workflow run package-release-preflight.yml \
+  --ref main \
+  -f expected_commit="$(git rev-parse HEAD)"
+```
+
+The workflow rejects a non-lowercase SHA, a dispatch ref other than `main`, a
+requested commit other than the dispatch commit, or a dirty/read-back mismatch.
+It installs the checked-in locked environment, runs the source identity check,
+builds the source distribution, verifies its bounded package-only inventory,
+then builds the pure-Python wheel from that extracted source distribution. It
+checks both archives for safe paths, exact version and project metadata,
+dependencies, entry points, README, license, and byte-identical tracked package
+payloads. The wheel `RECORD` hashes and sizes are independently verified.
+
+One seven-day Actions artifact contains only:
+
+- `denuo_hns_topology-0.1.0.tar.gz`;
+- `denuo_hns_topology-0.1.0-py3-none-any.whl`;
+- `SHA256SUMS`; and
+- `PROVENANCE.json`, binding the repository, commit, tree, `main` ref, build
+  environment, artifact sizes, and SHA-256 values.
+
+`MANIFEST.in` keeps tests, deployment scripts, cloud configuration, generated
+topology data, static-site output, and production archives out of the source
+distribution. The workflow has read-only repository permission, receives no
+credential, and invokes no topology indexing, site generation, data release,
+cloud, tag, GitHub Release, or PyPI operation. A newly committed preflight is
+not qualified until its exact pushed commit completes routine CI, CodeQL, and
+this manual workflow successfully.
 
 ## Publication Gate
 
@@ -88,12 +138,12 @@ Before the first publication:
 1. Confirm the intended public distribution name and PyPI ownership.
 2. Confirm the candidate version in both source files and `CHANGELOG.md`.
 3. Push the exact source commit to `main` and wait for CI and security checks.
-4. Download the exact-commit wheel artifact and verify its SHA-256 sidecar.
-5. Build and inspect any additional source distribution required by the chosen
-   publishing channel from the same clean commit.
+4. Dispatch the exact-commit package preflight and require its success.
+5. Download its candidate artifact and verify `SHA256SUMS`, `PROVENANCE.json`,
+   the source commit, and both distribution files independently.
 6. Only with explicit release authorization, create the matching version tag,
    publish artifacts, and record the release date and hashes.
 
-CI artifact upload is not publication. Nothing in the package or topology-data
-workflows creates a tag, GitHub Release, PyPI release, production deployment, or
-cloud resource automatically.
+Actions artifact upload is not publication. Nothing in the package or
+topology-data workflows creates a tag, GitHub Release, PyPI release, production
+deployment, or cloud resource automatically.

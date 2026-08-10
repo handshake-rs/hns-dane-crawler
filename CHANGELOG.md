@@ -16,6 +16,16 @@ static sites, and archive manifests have independent data-release provenance.
 - Move canonical source to `handshake-rs/hns-dane-crawler` while preserving the
   `denuo-hns-topology`, `hns_topology`, `hns-topology`, and
   `hns-live-directory` compatibility identifiers.
+- Add a credential-free, manual exact-`main` package preflight that builds the
+  0.1.0 source distribution and then its pure-Python wheel, validates archive
+  metadata, content, version, entry points, and wheel `RECORD`, and retains only
+  the two distributions, SHA-256 sums, and build provenance for seven days.
+- Keep deployment scripts, cloud configuration, generated topology/site data,
+  production archives, and tests outside the source-distribution inventory;
+  package preflight does not run or publish any topology-data release path.
+- Record exact `43b78fb` routine CI and CodeQL evidence while retaining a fresh
+  exact-commit CI, CodeQL, and manual package-preflight boundary for this later
+  release-tooling source.
 
 There is no earlier package release or tag to supersede. Keep the candidate at
 `0.1.0` until the first package publication is deliberately authorized; record

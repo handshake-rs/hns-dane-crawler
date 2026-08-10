@@ -43,6 +43,12 @@ published to PyPI. Production topology snapshots and website deployments are
 data releases with their own manifest provenance; they are not Python package
 releases and do not imply that the source candidate was published.
 
+Routine CI smoke-builds a wheel. Release acceptance additionally requires the
+credential-free manual exact-`main` package preflight, which builds and inspects
+both the source distribution and wheel and retains only short-lived hashes and
+provenance alongside those candidates. It never invokes the topology-data or
+website deployment paths. See the package release guide for the exact gate.
+
 The declared Python contract is Python 3.11 or newer. CI qualifies CPython 3.11
 on Ubuntu 24.04. The production wrappers additionally assume Bash, Linux,
 systemd, HSD, and the documented GCE environment; other Python/platform
