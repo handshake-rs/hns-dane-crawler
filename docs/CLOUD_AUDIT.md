@@ -18,7 +18,7 @@ gcloud config set account jaron.rosenau@gmail.com
 gcloud config set project denuo-web-site
 ```
 
-Read-only Compute Engine inventory now succeeds:
+The read-only Compute Engine inventory succeeded in that snapshot:
 
 ```text
 NAME         STATUS   MACHINE_TYPE  DEVICE_NAME

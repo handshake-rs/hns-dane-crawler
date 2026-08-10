@@ -19,6 +19,12 @@ Required for HSD indexing:
 - `HSD_MIN_BLOCK_HEIGHT` defaults to `300000` for production mainnet readiness checks
 - `CHECK_HSD_READY` defaults to `1`
 
+The `HNScrawler` directory component in deployed paths is retained as an
+on-host compatibility name. It is not the current product or repository name;
+changing it requires a coordinated migration of systemd units, environment
+files, timers, and persistent-disk paths rather than a documentation-only
+rename.
+
 Required for GCP provisioning:
 
 - `GCP_PROJECT` should be `denuo-web-site`
@@ -108,7 +114,9 @@ Use `BOOTSTRAP_LIMIT` for the first HSD RPC smoke run. Full HSD RPC bootstrap us
 
 ## Production Website Disk
 
-The existing web VM has a 30 GB boot disk with about 9.7 GB free. Keep generated report bytes off that boot disk.
+The 2026-07-01 cloud snapshot recorded a 30 GB web-VM boot disk with about
+9.7 GB free. That free-space value is historical; use the production preflight
+for the live value. Keep generated report bytes off the boot disk.
 
 The production artifact disk workflow is:
 
@@ -117,7 +125,7 @@ DRY_RUN=1 scripts/gcloud-prepare-production-web.sh
 CONFIRM_PRODUCTION_WEB=1 scripts/gcloud-prepare-production-web.sh
 ```
 
-Current production shape:
+Configured production shape:
 
 - VM: `denuoweb-vm`
 - project: `denuo-web-site`

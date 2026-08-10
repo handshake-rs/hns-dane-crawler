@@ -1,4 +1,10 @@
-# Production Release Checklist
+# Production Topology-Data Release Checklist
+
+This checklist validates a generated topology snapshot, static website tree,
+and optional archive before production deployment. It is not a Python package
+publication checklist and does not create a Git tag, GitHub Release, or PyPI
+release. Use [`PACKAGE_RELEASE.md`](PACKAGE_RELEASE.md) for the independent
+source-package boundary.
 
 ## Local Release Gate
 

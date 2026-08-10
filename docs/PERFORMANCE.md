@@ -1,4 +1,9 @@
-# HSD Bootstrap Performance
+# HSD Bootstrap Performance (July 2026 Audit)
+
+This document preserves the July 1–2, 2026 code audit and benchmark evidence.
+It explains why the checked-in compact tree exporter and experimental name-only
+replay exist; it is not a live node-performance report. Re-run the smoke export,
+same-height comparison, and benchmarks after HSD or infrastructure changes.
 
 The production bootstrap should read HSD's name tree directly, not JSON-RPC.
 
@@ -40,7 +45,8 @@ Headers are not enough for this report. Block headers prove chain order and work
 
 ## Full-Node Sync Bottleneck Audit
 
-The production blocker is not the Python import path. It is initial HSD chain replay before the stopped-node tree export can run.
+The production blocker observed in this audit was not the Python import path.
+It was initial HSD chain replay before the stopped-node tree export could run.
 
 The relevant HSD hot path is:
 
@@ -88,7 +94,12 @@ Initial benchmark on the `hns-topology-indexer` VM while HSD continued syncing:
 - Import time for the compact JSONL into SQLite with `bootstrap-jsonl --batch-size 20000`: 3 minutes 54 seconds.
 - Spot checks for delegated/GLUE and SYNTH rows matched live HSD RPC resource summaries for the sampled names.
 
-The speedup is real, but this path remains experimental until a same-height comparison against HSD's authoritative name-tree export passes. The current implementation also holds all `NameState` objects in memory before writing compact rows; the next productionization step is to reduce memory by using lighter state records, direct SQLite materialization, or deterministic streaming/spilling.
+The measured speedup was real, but this path remains experimental until a
+same-height comparison against HSD's authoritative name-tree export passes. The
+audited implementation also held all `NameState` objects in memory before
+writing compact rows; reducing that memory use with lighter state records,
+direct SQLite materialization, or deterministic streaming/spilling remains a
+productionization gate unless later code and evidence supersede it.
 
 ## Lower-Risk Experiments
 

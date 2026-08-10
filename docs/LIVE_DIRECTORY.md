@@ -71,7 +71,16 @@ The sweep records one compact `sweep_coverage` row per root: resource hash, sign
 
 Broad probes first resolve A/AAAA and try both HTTP and HTTPS. When either endpoint responds, the same probe performs DNSSEC and TLSA collection before storing the result. This keeps unreachable delegated roots inexpensive while ensuring endpoint scans supply current TLSA evidence.
 
-Production uses 50 workers, a global ceiling of ten target starts per second, and per-authority pacing. HTTP 429/503 responses increase per-authority delay; repeated DNS failures place only shared authority groups on a compact cooldown. The priority-index timer runs independently every hour and reads the compact published artifacts only when they have changed. The probe service runs another cycle 30 seconds after the prior one completes, independent of the weekly indexer and deploy jobs.
+The configured production service uses 50 broad-sweep workers, a global ceiling
+of ten target starts per second, and per-authority pacing. HTTP 429/503 responses
+increase per-authority delay; repeated DNS failures place only shared authority
+groups on a compact cooldown. The priority-index timer runs independently every
+hour and reads the compact published artifacts only when they have changed. The
+probe timer schedules another cycle 30 seconds after the prior one completes,
+independent of the weekly indexer and deploy jobs. Its default cycle runs only
+the indexed `hns_handoff` and `shared_delegation` priority tiers; the generic
+root tiers remain explicit operator commands because they still read the
+topology snapshot.
 
 ## Probe Semantics
 

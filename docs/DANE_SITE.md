@@ -20,9 +20,11 @@ HNS proof
 6. Publish TLSA at `_443._tcp.<site>` and, if used, `_443._tcp.www.<site>`.
 7. Serve HTTPS with the certificate or SPKI that the TLSA record identifies.
 
-## Current Production Shape
+## Configured Production Shape
 
-The current website VM uses nginx:
+The checked-in deployment defaults target this nginx shape. Treat these values
+as configuration, not a live inventory; run
+`scripts/gcloud-production-preflight.sh` before any production action.
 
 - VM: `denuoweb-vm`
 - project: `denuo-web-site`

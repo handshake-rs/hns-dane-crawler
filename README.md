@@ -16,12 +16,40 @@ Browser clients and the shared DANE engine resolve and validate the hostname
 for each request independently. They do not depend on this crawler being
 available at runtime. This package likewise does not operate a Handshake node or
 wallet, publish authoritative DNS data, provision certificates, or enforce TLS
-policy in a browser.
+policy in a browser. It does not implement HNSA or HNSR service roles, expose
+wallet or value-transfer controls, or provide a settlement or P2P marketplace.
 
 The canonical source repository is
 [`handshake-rs/hns-dane-crawler`](https://github.com/handshake-rs/hns-dane-crawler).
 The organization migration does not change Denuo's package authorship,
 copyright, production deployment, publishing, or release-signing identity.
+
+## Package and Release Identity
+
+The repository name, Python distribution name, import package, and installed
+commands are intentionally different compatibility identifiers:
+
+| Surface | Identifier |
+| --- | --- |
+| Source repository | `handshake-rs/hns-dane-crawler` |
+| Python distribution | `denuo-hns-topology` |
+| Python import package | `hns_topology` |
+| Console commands | `hns-topology`, `hns-live-directory` |
+| Source candidate version | `0.1.0` |
+
+At this revision, `0.1.0` is an unpublished source candidate: the repository
+has no version tag or GitHub Release and the distribution has not been
+published to PyPI. Production topology snapshots and website deployments are
+data releases with their own manifest provenance; they are not Python package
+releases and do not imply that the source candidate was published.
+
+The declared Python contract is Python 3.11 or newer. CI qualifies CPython 3.11
+on Ubuntu 24.04. The production wrappers additionally assume Bash, Linux,
+systemd, HSD, and the documented GCE environment; other Python/platform
+combinations are not currently release-qualified. See
+[`docs/PACKAGE_RELEASE.md`](docs/PACKAGE_RELEASE.md) for the package preflight
+and [`docs/PRODUCTION_RELEASE.md`](docs/PRODUCTION_RELEASE.md) for the separate
+topology-data release gate.
 
 The current analysis answers:
 
@@ -137,7 +165,17 @@ Indexing is O(N) in exported names plus resource records. Export uses one canoni
 ```bash
 make test
 make lint
+make package-check
 make fixture-site
 ```
 
 Production wrappers live under `scripts/`. They start HSD only for update phases, generate the static site, validate the release, optionally archive, and publish generated `public/` artifacts.
+
+## Documentation
+
+- [Architecture and runtime boundaries](docs/ARCHITECTURE.md)
+- [Data model and public artifacts](docs/DATA_MODEL.md)
+- [Package release preflight](docs/PACKAGE_RELEASE.md)
+- [Production topology-data release](docs/PRODUCTION_RELEASE.md)
+- [Deployment](docs/DEPLOYMENT.md)
+- [Standalone live directory](docs/LIVE_DIRECTORY.md)
