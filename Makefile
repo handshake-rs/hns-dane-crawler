@@ -1,4 +1,4 @@
-.PHONY: install test lint fixture-site verify-release clean
+.PHONY: install test lint package-check fixture-site verify-release clean
 
 install:
 	python3 -m venv .venv
@@ -11,6 +11,9 @@ test:
 
 lint:
 	. .venv/bin/activate && ruff check .
+
+package-check:
+	. .venv/bin/activate && python scripts/check-package-release.py
 
 fixture-site:
 	rm -rf data public

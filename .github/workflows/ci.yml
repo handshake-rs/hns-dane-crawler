@@ -33,6 +33,8 @@ jobs:
           python -m pip check
       - name: Lint
         run: ruff check .
+      - name: Package identity
+        run: python scripts/check-package-release.py
       - name: Script syntax
         run: |
           bash -n scripts/*.sh
@@ -50,3 +52,29 @@ jobs:
           test "$(find archives -name '*-manifest.json' | wc -l)" -eq 1
           test "$(find archives -name '*-site.tar.gz' | wc -l)" -eq 1
           test "$(find archives -name '*-topology.sqlite.gz' | wc -l)" -eq 1
+      - name: Build and verify candidate wheel
+        run: |
+          mkdir -p "$RUNNER_TEMP/package-dist" "$RUNNER_TEMP/package-install"
+          python -m pip wheel --no-build-isolation --no-deps \
+            --wheel-dir "$RUNNER_TEMP/package-dist" .
+          python -m pip install --no-deps --target "$RUNNER_TEMP/package-install" \
+            "$RUNNER_TEMP"/package-dist/*.whl
+          PYTHONPATH="$RUNNER_TEMP/package-install" python - <<'PY'
+          from importlib.metadata import version
+          import hns_topology
+
+          installed = version("denuo-hns-topology")
+          assert installed == hns_topology.__version__, (installed, hns_topology.__version__)
+          print(f"verified denuo-hns-topology {installed}")
+          PY
+          cd "$RUNNER_TEMP/package-dist"
+          sha256sum -- *.whl > SHA256SUMS
+      - name: Retain exact-commit wheel
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: denuo-hns-topology-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/package-dist/*.whl
+            ${{ runner.temp }}/package-dist/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
