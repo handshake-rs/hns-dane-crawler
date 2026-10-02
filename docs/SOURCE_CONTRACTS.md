@@ -1,4 +1,4 @@
-# Source Audit
+# Source and validation contracts
 
 This project currently depends on these protocol and implementation assumptions.
 
@@ -23,7 +23,7 @@ Sources:
 - RFC 6698 defines TLSA RDATA as certificate usage, selector, matching type, and certificate association data.
 - RFC 6698 defines matching type `0` as exact selected content, `1` as SHA-256, and `2` as SHA-512.
 - RFC 7671 provides operational guidance and symbolic names such as DANE-EE, SPKI, and SHA2-256.
-- The first production web-DANE profile should prefer `3 1 1` where the operational environment supports it.
+- The web-DANE profile should prefer `3 1 1` where the operational environment supports it.
 
 Sources:
 

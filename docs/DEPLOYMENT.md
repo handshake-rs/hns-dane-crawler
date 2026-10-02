@@ -6,9 +6,7 @@ The cheapest sustainable deployment is an ephemeral indexer VM plus the existing
 
 Copy `scripts/env.example` to `.env` on the operator machine or export the variables directly.
 
-`docs/CLOUD_AUDIT.md` preserves the 2026-07-01 operator snapshot. Do not use
-that dated inventory as current state; run
-`scripts/gcloud-production-preflight.sh` to inspect the active `gcloud`
+Run `scripts/gcloud-production-preflight.sh` to inspect the active `gcloud`
 context and production resources before a deployment.
 
 Required for HSD indexing:
@@ -18,12 +16,6 @@ Required for HSD indexing:
 - `HSD_MAX_BLOCK_LAG` defaults to `2`
 - `HSD_MIN_BLOCK_HEIGHT` defaults to `300000` for production mainnet readiness checks
 - `CHECK_HSD_READY` defaults to `1`
-
-The `HNScrawler` directory component in deployed paths is retained as an
-on-host compatibility name. It is not the current product or repository name;
-changing it requires a coordinated migration of systemd units, environment
-files, timers, and persistent-disk paths rather than a documentation-only
-rename.
 
 Required for GCP provisioning:
 
@@ -114,10 +106,6 @@ Use `BOOTSTRAP_LIMIT` for the first HSD RPC smoke run. Full HSD RPC bootstrap us
 
 ## Production Website Disk
 
-The 2026-07-01 cloud snapshot recorded a 30 GB web-VM boot disk with about
-9.7 GB free. That free-space value is historical; use the production preflight
-for the live value. Keep generated report bytes off the boot disk.
-
 The production artifact disk workflow is:
 
 ```bash
@@ -157,8 +145,6 @@ Keep full HSD data off the production web VM unless there is a deliberate later 
 
 HSD mainnet RPC listens on `127.0.0.1:12037` by default. Bootstrap and incremental scripts source `/mnt/hnscrawler/secrets/hsd.env` when present.
 
-The production HSD service targets `HSD_MAX_OUTBOUND=16` outbound peers and `HSD_LOG_LEVEL=warning` by default. Extra outbound peers improve peer diversity and failover but HSD still uses a single loader peer for historical sync. Warning-level logging avoids per-block debug/info journal writes during bootstrap. The service also raises conservative ChainDB/blockstore cache settings with `HSD_CACHE_SIZE_MB=512`, `HSD_BLOCK_CACHE_SIZE_MB=128`, `HSD_MAX_FILES=256`, and `HSD_ENTRY_CACHE=50000`; these are runtime cache knobs, not consensus changes.
-
 `scripts/check-hsd-ready.sh` runs `hns-topology hsd-status` before HSD-backed bootstrap and incremental indexing. It requires a local RPC URL, reported chain and tip hash, a non-negative block height, `blocks >= HSD_MIN_BLOCK_HEIGHT`, `verificationprogress >= HSD_MIN_VERIFICATION_PROGRESS`, median block time no older than `HSD_MAX_MEDIAN_TIME_AGE_SECONDS`, `initialblockdownload = false` when HSD reports that field, and `headers - blocks <= HSD_MAX_BLOCK_LAG` when headers are reported. Use `CHECK_HSD_READY=0` only for deliberate debugging. Use `HSD_ALLOW_REMOTE_RPC=1` only when intentionally checking a remote RPC endpoint.
 
 ## Nightly Or Weekly Update
@@ -186,17 +172,9 @@ CONFIRM_LIVE_DIRECTORY_DEPLOY=1 scripts/gcloud-deploy-live-directory.sh
 
 This installs `hns-live-directory.service` and `hns-live-directory.timer` without modifying `hns-topology-production.timer`, the indexer VM pipeline, or either topology publish script. Full behavior and paths are in `docs/LIVE_DIRECTORY.md`.
 
-The obsolete embedded-TLSA columns are absent from newly built databases. Physical removal from an existing production database is a separate maintenance operation because SQLite may rewrite the large resource table; no weekly script runs it automatically:
-
-```bash
-hns-topology cleanup-legacy-schema --db /mnt/hnscrawler/data/topology.sqlite --confirm-large-rewrite
-```
-
-Run that command only in a planned maintenance window with a current database snapshot and enough free disk for SQLite's rewrite behavior.
-
 For a limited HSD RPC smoke report, use `PIPELINE_MODE=bootstrap BOOTSTRAP_LIMIT=100 scripts/gcloud-run-indexer-pipeline.sh` after HSD is synced. For the initial full report, use `PIPELINE_MODE=extract-jsonl EXPORT_FORMAT=compact JSONL_PATH=/mnt/hnscrawler/data/extracted_names.jsonl scripts/gcloud-run-indexer-pipeline.sh`. If a JSONL file has already been produced, use `PIPELINE_MODE=jsonl JSONL_PATH=/mnt/hnscrawler/data/extracted_names.jsonl scripts/gcloud-run-indexer-pipeline.sh`. If you intentionally accept the risk of HSD's unpaginated `getnames` for a full RPC bootstrap, set `ALLOW_UNPAGINATED_GETNAMES=1 PIPELINE_MODE=bootstrap`.
 
-`scripts/gcloud-run-indexer-pipeline.sh` runs `scripts/verify-release.sh` after static site generation. It defaults to a remote systemd runner so site generation and verification are not killed if the local SSH/IAP tunnel or caller exits. Set `INDEXER_PIPELINE_WAIT=0` only for an intentionally detached run where the VM must be left running; `scripts/gcloud-production-cycle.sh` refuses to combine detached pipeline mode with `INDEXER_FINAL_ACTION=stop` because that would kill the VM-owned work immediately after launch. Set `RUN_PUBLISH_FROM_INDEXER=1` to publish from inside the same VM-owned unit after verification. Set `INDEXER_PIPELINE_RUNNER=ssh` only for emergency debugging of the old foreground behavior. The GCE pipeline defaults `MIN_INDEXED_HEIGHT` to `HSD_MIN_BLOCK_HEIGHT`, so a structurally valid but shallow snapshot cannot pass production release validation or publish validation.
+`scripts/gcloud-run-indexer-pipeline.sh` runs `scripts/verify-release.sh` after static site generation. It defaults to a remote systemd runner so site generation and verification are not killed if the local SSH/IAP tunnel or caller exits. Set `INDEXER_PIPELINE_WAIT=0` only for an intentionally detached run where the VM must be left running; `scripts/gcloud-production-cycle.sh` refuses to combine detached pipeline mode with `INDEXER_FINAL_ACTION=stop` because that would kill the VM-owned work immediately after launch. Set `RUN_PUBLISH_FROM_INDEXER=1` to publish from inside the same VM-owned unit after verification. Set `INDEXER_PIPELINE_RUNNER=ssh` only for explicit interactive debugging. The GCE pipeline defaults `MIN_INDEXED_HEIGHT` to `HSD_MIN_BLOCK_HEIGHT`, so a structurally valid but shallow snapshot cannot pass production release validation or publish validation.
 
 When `RUN_ARCHIVE=1`, the pipeline runs `scripts/archive-release.sh` after validation and before publishing. It writes a generated-site tarball, a consistent `topology.sqlite.gz` database backup, and a JSON manifest with SHA-256 hashes under `ARCHIVE_DIR`, pruning to `ARCHIVE_KEEP` manifests. Use `hns-topology validate-archive --manifest <manifest>` to verify artifact hashes, tarball contents, and SQLite backup integrity before moving archive artifacts to backup storage. Set `BACKUP_BUCKET_URI=gs://bucket/prefix` to copy those compressed release artifacts to bucket storage. Do not point archive tooling at the live HSD datadir.
 

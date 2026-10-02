@@ -181,6 +181,8 @@ Production wrappers live under `scripts/`. They start HSD only for update phases
 
 - [Architecture and runtime boundaries](docs/ARCHITECTURE.md)
 - [Data model and public artifacts](docs/DATA_MODEL.md)
+- [Indexing and export](docs/INDEXING.md)
+- [Source and validation contracts](docs/SOURCE_CONTRACTS.md)
 - [Package release preflight](docs/PACKAGE_RELEASE.md)
 - [Production topology-data release](docs/PRODUCTION_RELEASE.md)
 - [Deployment](docs/DEPLOYMENT.md)

@@ -1,13 +1,6 @@
-# HSD Bootstrap Performance (July 2026 Audit)
-
-This document preserves the July 1–2, 2026 code audit and benchmark evidence.
-It explains why the checked-in compact tree exporter and experimental name-only
-replay exist; it is not a live node-performance report. Re-run the smoke export,
-same-height comparison, and benchmarks after HSD or infrastructure changes.
+# Bootstrap performance
 
 The production bootstrap should read HSD's name tree directly, not JSON-RPC.
-
-Audit target: upstream `handshake-org/hsd` commit `698e252ebc7b5c1dd0a9587e342fdd153d020ae4`.
 
 Relevant HSD structures:
 
@@ -39,75 +32,35 @@ Tuning knobs:
 - `JSONL_BOOTSTRAP_BATCH_SIZE=5000` by default. Increase on a larger indexer VM if memory is comfortable.
 - `EXPORT_LIMIT=<n>` for smoke runs.
 
-Synthetic compact import profiling on 100,000 rows dropped from 11.80 seconds to 6.53 seconds after direct tuple batching, sparse JSON array handling, cached provider IP parsing, and provider-rule short-circuiting. Real mainnet speedup depends on HSD tree I/O and the share of names with non-empty resources, but the compact path keeps the Python side close to SQLite write cost.
+Benchmark the exact source with a representative export and record rows per
+second, peak memory, database size, and disk I/O. Include empty and populated
+resources, and compare the resulting row counts and summaries with the source.
 
 Headers are not enough for this report. Block headers prove chain order and work, but HNS name resources are current state in the name tree. The report needs the current resource bytes to classify NS, GLUE, DS, SYNTH, TXT, DANE candidacy, and provider patterns.
 
-## Full-Node Sync Bottleneck Audit
+## Full-node synchronization
 
-The production blocker observed in this audit was not the Python import path.
-It was initial HSD chain replay before the stopped-node tree export could run.
+Stopped-state export requires a synchronized HSD name tree. HSD validates
+transactions and updates both UTXOs and names in canonical block order. More
+peers can improve download throughput, but they do not parallelize ordered
+state transitions. Measure replay, tree I/O, export, import, and site generation
+separately before changing resource allocation.
 
-The relevant HSD hot path is:
+## Experimental name-only export
 
-- `Chain#updateInputs()` is used below the mainnet checkpoint height. It skips historical script verification, but it still spends inputs, verifies covenants, and adds every transaction output to the UTXO view.
-- `CoinView#spendInputs()` reads transaction inputs in fixed batches of four before marking them spent.
-- `Chain#verifyCovenants()` mutates `CoinView.names` in transaction order. That order is consensus-sensitive and must remain deterministic.
-- `ChainDB#_saveNames()` writes each changed `NameState` independently through `txn.insert(nameHash, ns.encode())` or `txn.remove(nameHash)`.
-- Urkel `Transaction#insert()` and `remove()` each perform an independent trie walk, resolving hash nodes and path-copying replacement nodes.
-- Urkel only commits the name tree on `network.names.treeInterval` boundaries, which is 36 blocks on mainnet.
+`scripts/export-hsd-nameonly-jsonl.sh` and
+`scripts/hsd-nameonly-replay-jsonl.js` read accepted blocks through local HSD RPC,
+apply name-covenant transitions, reuse HSD `NameState` for expiration math, and
+write compact JSONL for `bootstrap-jsonl`. The export is explicitly labeled
+`hsd_nameonly_rpc_compact_experimental`.
 
-Increasing peer count or vCPU count does not remove this bottleneck. HSD chooses loader peers for block sync, but historical block connection is still a serial state transition. A larger VM helps only until the single HSD replay thread, cache behavior, or small async DB read batches become the limiter.
+This experiment is not a validating full node. Before using its output for a
+production snapshot, compare every resulting name and resource at the same
+height with a stopped authoritative HSD tree export. Compare interval roots
+where available, reject decode errors, and measure peak memory at mainnet
+scale. Keep the authoritative tree export as the production path until the
+complete comparison and resource budgets pass.
 
-## Largest Practical 10x Target
-
-The fundamental mismatch is using a general full node as the bootstrap engine for a report that only needs current name-resource state.
-
-HSD must maintain the full UTXO set because it is a validating node. The topology report does not need ordinary coin UTXOs, wallet state, mempool policy, historical blocks, or full transaction indexes. It needs:
-
-- accepted block order
-- name covenant transitions
-- enough covenant-bearing outpoint data to apply name-state transitions
-- current `NameState.data` resource bytes
-- recent block hashes for reorg detection
-
-A report-specific bootstrapper can therefore track only name covenant outpoints and name states instead of spending every ordinary transaction input. For historical checkpointed blocks, that avoids most UTXO read/write work while preserving the data the report actually consumes.
-
-The safe shape is:
-
-1. Keep the current HSD path as the provenance baseline and production fallback.
-2. Build a separate name-only historical replay experiment on a cloned disk or temporary VM.
-3. Parse accepted blocks, maintain a compact map of name-covenant outpoints, apply name covenant transitions in block/transaction/output order, and write compact report rows directly.
-4. Compare the experiment against HSD exports at fixed heights and at the final tip. For stronger validation, compute or import the Urkel root and compare tree roots on 36-block boundaries.
-5. Promote it only after repeated equality checks against HSD on the same chain data.
-
-This is different from patching HSD's live full-node replay. HSD cannot safely skip non-name UTXOs and still remain a general validating node. The speedup comes from changing the bootstrapper's contract, not from making HSD consensus code less complete.
-
-The first sidecar implementation is `scripts/export-hsd-nameonly-jsonl.sh`, backed by `scripts/hsd-nameonly-replay-jsonl.js`. It reads accepted blocks through local HSD RPC so it can run beside a syncing node, reuses HSD `NameState` for state/expiration math, writes compact JSONL rows compatible with `bootstrap-jsonl`, and marks its provenance as `hsd_nameonly_rpc_compact_experimental`.
-
-Initial benchmark on the `hns-topology-indexer` VM while HSD continued syncing:
-
-- Empty early-chain smoke: 500 blocks in 0.55 seconds, 904 blocks/sec.
-- Dense historical window, heights 90000-91999: 2000 blocks in 16.27 seconds, 122.90 blocks/sec, 467788 name covenants.
-- Full available replay to height 125475: 125476 blocks in 1273.93 seconds, 98.50 blocks/sec, 30109319 name covenants, 5279423 compact names, 5 resource decode errors.
-- Artifact sizes for that height: 1.8 GB compact JSONL and 2.5 GB imported SQLite.
-- Import time for the compact JSONL into SQLite with `bootstrap-jsonl --batch-size 20000`: 3 minutes 54 seconds.
-- Spot checks for delegated/GLUE and SYNTH rows matched live HSD RPC resource summaries for the sampled names.
-
-The measured speedup was real, but this path remains experimental until a
-same-height comparison against HSD's authoritative name-tree export passes. The
-audited implementation also held all `NameState` objects in memory before
-writing compact rows; reducing that memory use with lighter state records,
-direct SQLite materialization, or deterministic streaming/spilling remains a
-productionization gate unless later code and evidence supersede it.
-
-## Lower-Risk Experiments
-
-These can be benchmarked, but they are not expected to produce a 10x win by themselves:
-
-- Increase `CoinView#spendInputs()` read batch size from 4 to 16 or 32 on a copied datadir and compare connected blocks per hour.
-- Add per-block prefetch of initial name states before covenant verification, while preserving ordered mutation.
-- Add an Urkel `applyBatch()` / `insertMany()` experiment that sorts changed name hashes and updates touched trie paths with better locality.
-- Benchmark Urkel file cache policy under historical replay with larger cache sizes and locality-aware eviction.
-
-Any HSD or Urkel change that affects name-state writes must be validated mechanically by comparing resulting tree roots against unmodified HSD. That validation can be automated; it does not require manual bit-by-bit code auditing, but it does require exact root equality before trusting the optimized path.
+A full node must keep ordinary UTXO and consensus validation. Any modification
+to ordered covenant mutation or authenticated-tree writes requires exact root
+and state equality against the pinned HSD implementation.

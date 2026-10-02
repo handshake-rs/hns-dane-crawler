@@ -39,13 +39,10 @@ Compact parsed HNS resource state per name:
 
 TLSA is not represented here because Handshake Resource data cannot contain delegated-zone TLSA records.
 
-New databases are created directly from the reduced schema. Existing large databases keep harmless legacy columns until the explicit maintenance command removes them:
-
-```bash
-hns-topology cleanup-legacy-schema --db data/topology.sqlite --confirm-large-rewrite
-```
-
-The command records `topology_schema_cleanup_version` and is intentionally not called by normal initialization, indexing, generation, or publish scripts because SQLite may rewrite the large `resource_summary` table while dropping columns.
+Databases store delegated-DNS observations separately from Handshake resources.
+TLSA presence is derived from those observations; Handshake resource records do
+not encode TLSA. Maintain the database using the current schema and verify a
+consistent backup before any operation that rewrites a populated table.
 
 ### `resource_ip`
 

@@ -16,16 +16,6 @@ the topology snapshot, static website, and archive workflow in
 | CI-qualified runtime | CPython 3.11 on Ubuntu 24.04 |
 | Publication state | source only; no tag, GitHub Release, or PyPI project |
 
-The distribution name and import/command names predate the repository rename
-and remain compatibility identifiers. Do not rename them as documentation
-cleanup.
-
-All repository history currently belongs to the first `0.1.0` candidate. With
-no prior package tag or publication, a bump to `0.1.1` would imply a released
-`0.1.0` that does not exist. Keep `pyproject.toml`,
-`src/hns_topology/__init__.py`, and this changelog at `0.1.0` until the release
-owner intentionally chooses and authorizes the first published version.
-
 ## Compatibility Boundary
 
 The Python code declares Python 3.11 or newer. CI currently proves only CPython
@@ -85,15 +75,6 @@ Remove the temporary directory after inspection. A wheel built from a dirty
 tree, an unpushed commit, or a failed CI run is not a release artifact. Routine
 CI does not build or inspect the source distribution and is not the package
 release preflight.
-
-Exact source `43b78fb6a28f920415aed6145d232126f5fa57e5` passed the complete
-repository CI job in
-[`31404940342`](https://github.com/handshake-rs/hns-dane-crawler/actions/runs/31404940342)
-and the Actions, JavaScript/TypeScript, and Python CodeQL jobs in
-[`31404938838`](https://github.com/handshake-rs/hns-dane-crawler/actions/runs/31404938838)
-on 2026-08-10. The CI run built and retained a wheel, but it predates the
-source-distribution preflight. These are exact-commit historical results, not
-qualification inherited by later release-tooling or documentation commits.
 
 ## Exact-Commit Package Preflight
 
