@@ -58,7 +58,7 @@ sudo chmod 775 "$LIVE_ROOT" "$LIVE_ROOT/data" "$LIVE_ROOT/run" "$LIVE_PUBLIC_DIR
 
 cd "$LIVE_REPO_DIR"
 python3 -m venv .venv
-.venv/bin/pip install --upgrade pip
+.venv/bin/pip install --upgrade 'pip>=26.2.0' 'setuptools>=84.1.0'
 .venv/bin/pip install -e .
 
 sudo tee /etc/default/hns-live-directory >/dev/null <<EOF

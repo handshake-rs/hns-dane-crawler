@@ -17,7 +17,7 @@ mkdir -p "$INDEXER_MOUNT/data" "$INDEXER_MOUNT/public" "$INDEXER_MOUNT/logs"
 
 python3 -m venv .venv
 . .venv/bin/activate
-pip install --upgrade pip
+pip install --upgrade 'pip>=26.2.0' 'setuptools>=84.1.0'
 pip install -e '.[dev]'
 
 mkdir -p data public
