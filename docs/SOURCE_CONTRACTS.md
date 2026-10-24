@@ -8,7 +8,7 @@ This project currently depends on these protocol and implementation assumptions.
 - `getnameresource <name>` is documented for viewing resource records for a name.
 - HSD resource record types used by this project are `DS`, `NS`, `GLUE4`, `GLUE6`, `SYNTH4`, `SYNTH6`, and `TXT`.
 - Node `getnames` exists, but the official API docs warn that it has no pagination and is mainly useful for debugging on regtest/testnet. Production mainnet bootstrapping must keep the name-source step replaceable.
-- `scripts/hsd-export-names-jsonl.js` is a production bootstrap extractor that opens HSD's chain/tree state and streams `NameState` rows to JSONL. Its production default is `EXPORT_FORMAT=compact`, which emits pre-summarized `compact_name` rows for this report instead of full HSD name/resource JSON. Run it through `scripts/export-hsd-jsonl.sh`, which stops the local `hsd` service by default before reading the datadir.
+- `scripts/hsd-export-names-jsonl.js` is a production bootstrap extractor that opens HSD's chain/tree state and streams `NameState` rows to JSONL. Its production default is `EXPORT_FORMAT=compact`, which emits pre-summarized `compact_name` rows for this report instead of full HSD name/resource JSON. Run it through `scripts/export-hsd-jsonl.sh`, which stops the local `hsd` service, including a pending systemd auto-restart, before reading the datadir.
 - HSD `prefix` determines the datadir. The indexer service pins it to `/mnt/hnscrawler/hsd` so chain data lands on the attached indexer disk.
 - HSD mainnet RPC defaults to port `12037`; regtest uses `14037`.
 

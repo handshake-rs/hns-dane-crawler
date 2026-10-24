@@ -29,11 +29,17 @@ restart_hsd() {
 }
 trap restart_hsd EXIT
 
-if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet hsd; then
+if command -v systemctl >/dev/null 2>&1 \
+    && [ "$(systemctl show hsd.service --property=LoadState --value 2>/dev/null || true)" = "loaded" ]; then
+  hsd_state="$(systemctl show hsd.service --property=ActiveState --value)"
   if [ "$STOP_HSD_FOR_EXPORT" = "1" ]; then
+    # Also cancel an auto-restart. is-active is false during that state, but
+    # systemd would otherwise race the exporter for the chain database lock.
     sudo systemctl stop hsd
-    stopped_hsd=1
-  elif [ "$ALLOW_RUNNING_HSD_EXPORT" != "1" ]; then
+    if [ "$hsd_state" != "inactive" ]; then
+      stopped_hsd=1
+    fi
+  elif [ "$hsd_state" != "inactive" ] && [ "$ALLOW_RUNNING_HSD_EXPORT" != "1" ]; then
     echo "hsd is running; stop it first or set ALLOW_RUNNING_HSD_EXPORT=1" >&2
     exit 2
   fi
