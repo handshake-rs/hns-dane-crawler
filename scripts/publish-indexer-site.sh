@@ -13,6 +13,7 @@ DENUO_WEB_PATH="${DENUO_WEB_PATH:-/var/www/denuoweb/hns-topology}"
 DENUO_WEB_TARGET_TAGS="${DENUO_WEB_TARGET_TAGS:-denuoweb}"
 PROD_ARTIFACT_MOUNT="${PROD_ARTIFACT_MOUNT:-/mnt/hns-topology}"
 PROD_LOOKUP_DB="${PROD_LOOKUP_DB:-$PROD_ARTIFACT_MOUNT/topology.sqlite}"
+PROD_LOOKUP_REPO_DIR="${PROD_LOOKUP_REPO_DIR:-$PROD_ARTIFACT_MOUNT/HNScrawler}"
 PUBLISH_LOOKUP_DB="${PUBLISH_LOOKUP_DB:-1}"
 ALLOW_BOOT_DISK_PUBLISH="${ALLOW_BOOT_DISK_PUBLISH:-0}"
 PUBLISH_FIREWALL_PRIORITY="${PUBLISH_FIREWALL_PRIORITY:-850}"
@@ -250,6 +251,21 @@ if [[ "$PUBLISH_LOOKUP_DB" == "1" ]]; then
     -e \"ssh -i '$INDEXER_PUBLISH_KEY' -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile='$INDEXER_PUBLISH_KNOWN_HOSTS'\" \
     '$INDEXER_DB' \
     den@$web_private_ip:'$lookup_tmp'"
+
+  indexer_revision="$(gce_ssh "$INDEXER_VM" "git -C '$INDEXER_REPO_DIR' rev-parse HEAD" | tail -n1)"
+  if [[ ! "$indexer_revision" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "could not resolve the indexer code revision" >&2
+    exit 2
+  fi
+  log "syncing lookup code on $DENUO_WEB_VM to $indexer_revision"
+  web_ssh "set -euo pipefail
+  lookup_repo='$PROD_LOOKUP_REPO_DIR'
+  test -d \"\$lookup_repo/.git\"
+  test \"\$(git -C \"\$lookup_repo\" branch --show-current)\" = main
+  test -z \"\$(git -C \"\$lookup_repo\" status --porcelain)\"
+  git -C \"\$lookup_repo\" fetch origin main
+  git -C \"\$lookup_repo\" merge --ff-only '$indexer_revision'
+  test \"\$(git -C \"\$lookup_repo\" rev-parse HEAD)\" = '$indexer_revision'"
 
   log "restarting lookup service on $DENUO_WEB_VM"
   web_ssh "set -euo pipefail
