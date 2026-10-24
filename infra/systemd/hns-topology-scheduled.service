@@ -1,0 +1,16 @@
+[Unit]
+Description=Run the weekly HNS topology refresh after the indexer VM starts
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=/mnt/hnscrawler
+
+[Service]
+Type=oneshot
+User=den
+Group=den
+WorkingDirectory=/mnt/hnscrawler/HNScrawler
+ExecStart=/usr/bin/bash /mnt/hnscrawler/HNScrawler/scripts/run-scheduled-indexer-cycle.sh
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

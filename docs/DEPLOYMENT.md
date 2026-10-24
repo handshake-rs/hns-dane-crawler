@@ -82,7 +82,14 @@ Operational note: production generation is long-running and must be owned by the
 
 For a fully VM-owned generate/verify/publish run, the indexer VM service account scope must include `https://www.googleapis.com/auth/cloud-platform`. Then run the remote systemd pipeline with `RUN_PUBLISH_FROM_INDEXER=1` and skip the local publish wrapper. `scripts/publish-indexer-site.sh` supports this with `PUBLISH_LOCAL_INDEXER=1`, which runs indexer-side validation, key generation, and rsync locally on the indexer while still using `gcloud` from the VM for temporary web-VM metadata and firewall changes.
 
-The weekly scheduler is `hns-topology-production.timer`, which triggers `hns-topology-production.service`; the service runs `/home/den/HNScrawler/scripts/run-production-cycle-logged.sh weekly` and writes wrapper progress to `logs/production-cycle/latest.log`. The scheduled wrapper defaults to `RUN_PUBLISH_FROM_INDEXER=1`, `INDEXER_PIPELINE_RUNNER=systemd`, and `INDEXER_PIPELINE_WAIT=1`: the VM-owned unit handles generate, verify, and publish; the local wrapper waits for that unit to finish and then applies `INDEXER_FINAL_ACTION=stop`. Do not rely on a foreground terminal or Codex tool session to remain attached through generation, publish, and cleanup.
+The weekly production scheduler is the Cloud Scheduler job `hns-topology-weekly-wake` in `us-west1`. At 03:05 UTC each
+Monday it starts `hns-topology-indexer` through the Compute API. The VM has `hns-topology-scheduled.service` enabled at
+boot. Its script runs only during the Monday 03:00 UTC window so manual starts for auction work do not trigger the
+topology cycle. It waits for HSD to sync, catches the database up to at least the ready HSD height, verifies the release,
+publishes from the indexer VM, and stops the VM. Persistent logs are in
+`/mnt/hnscrawler/logs/scheduled-indexer-cycle.log`. The older `hns-topology-production.timer` on the web VM cannot start
+the indexer without GCP credentials and should remain disabled. `scripts/run-production-cycle-logged.sh` remains an
+interactive wrapper for an authenticated operator host.
 
 To resume HSD sync without running or publishing a report, use:
 
